@@ -1,16 +1,15 @@
 spring:
   datasource:
-    name: blog
+    name: example_datasource
     generate-unique-name: false
   h2:
     console:
       enabled: true
 # http://localhost:8090/h2-console/
-# url=jdbc:h2:mem:blog user=SA
+# url=jdbc:h2:mem:example_datasource user=SA
 # SELECT * FROM ENTITY_EXAMPLE
 server:
   port: 8090
-
 
 management:
   endpoint:

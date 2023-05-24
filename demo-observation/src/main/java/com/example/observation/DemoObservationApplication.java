@@ -3,6 +3,7 @@ package com.example.observation;
 import com.example.observation.model.EntityExample;
 import com.example.observation.repository.ExampleRepository;
 import com.example.observation.service.ExampleService;
+import com.example.observation.service.NewExampleService;
 import io.micrometer.observation.Observation;
 import io.micrometer.observation.ObservationRegistry;
 import org.springframework.boot.CommandLineRunner;
@@ -10,6 +11,9 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.reactive.function.client.support.WebClientAdapter;
+import org.springframework.web.service.invoker.HttpServiceProxyFactory;
 
 import java.util.List;
 
@@ -21,9 +25,8 @@ public class DemoObservationApplication {
         System.out.println("Hello from Spring Boot 3!");
     }
 
-    /**
-     * Find out about new HTTP interfaces in *http-interfaces* module
-     */
+
+    // old approach
     @Bean
     RestTemplate restTemplate() {
         return new RestTemplate();
@@ -44,16 +47,25 @@ public class DemoObservationApplication {
 		};
 	}
 
-//    @Bean
-//    CommandLineRunner commandLineRunnerNew(ExampleRepository exampleRepository) {
-//        return args -> {
-//            WebClient client = WebClient.builder().baseUrl("https://jsonplaceholder.typicode.com").build();
-//            HttpServiceProxyFactory proxyFactory = HttpServiceProxyFactory.builder(WebClientAdapter.forClient(client)).build();
-//            // implementation of JsonPlaceholderService interface
-//            JsonPlaceholderService jsonPlaceholderService = proxyFactory.createClient(JsonPlaceholderService.class);
-//
-//            List<EntityExample> postsList = jsonPlaceholderService.getPostsList();
-//            exampleRepository.saveAll(postsList);
-//        };
-//    }
+
+    // new approach
+    @Bean
+    CommandLineRunner commandLineRunnerNew(ExampleRepository exampleRepository, ObservationRegistry observationRegistry) {
+        return args -> {
+            WebClient client = WebClient.builder().baseUrl("https://jsonplaceholder.typicode.com").build();
+            HttpServiceProxyFactory proxyFactory = HttpServiceProxyFactory
+                    .builder(WebClientAdapter.forClient(client)).build();
+            // implementation of JsonPlaceholderService interface
+            NewExampleService newExampleService = proxyFactory.createClient(NewExampleService.class);
+
+            List<EntityExample> posts = Observation
+                    .createNotStarted("json-place-holder.load-posts", observationRegistry)
+                    .lowCardinalityKeyValue("some-value", "100")
+                    .observe(newExampleService::getPostsList);
+
+            Observation
+                    .createNotStarted("post-repository.save-all",observationRegistry)
+                    .observe(() -> exampleRepository.saveAll(posts));
+        };
+    }
 }
