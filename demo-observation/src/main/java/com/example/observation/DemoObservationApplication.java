@@ -37,12 +37,12 @@ public class DemoObservationApplication {
                                            ObservationRegistry observationRegistry) {
 		return args -> {
             List<EntityExample> postsList = Observation
-                    .createNotStarted("json-place-holder.load-posts", observationRegistry)
+                    .createNotStarted("json-place-holder.load-posts.old-approach", observationRegistry)
                     .lowCardinalityKeyValue("some-value", "100")
                     .observe(exampleService::getPostsList);
 
             Observation
-                    .createNotStarted("post-repository.save-all",observationRegistry)
+                    .createNotStarted("post-repository.save-all.old-approach",observationRegistry)
                     .observe(() -> exampleRepository.saveAll(postsList));
 		};
 	}
@@ -59,12 +59,12 @@ public class DemoObservationApplication {
             NewExampleService newExampleService = proxyFactory.createClient(NewExampleService.class);
 
             List<EntityExample> posts = Observation
-                    .createNotStarted("json-place-holder.load-posts", observationRegistry)
+                    .createNotStarted("json-place-holder.load-posts.new-approach", observationRegistry)
                     .lowCardinalityKeyValue("some-value", "100")
                     .observe(newExampleService::getPostsList);
 
             Observation
-                    .createNotStarted("post-repository.save-all",observationRegistry)
+                    .createNotStarted("post-repository.save-all.new-approach",observationRegistry)
                     .observe(() -> exampleRepository.saveAll(posts));
         };
     }
